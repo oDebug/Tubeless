@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<style>
+.center {
+    margin: auto;
+    width: 60%;
+    padding: auto;
+    text-align: center;
+}
+
+#player{
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+#audio{
+    width: 640px;
+    margin-bottom: 4px;
+}
+
+#urlInput{
+    width:280px;
+}
+</style>
+</head>
+<body>
+
+    <div class="center">
+        <label>URL:</label> <input type="text" id="urlInput"> <input type="button" id="pull" value="Pull" onclick="pullVideo()">
+        <input type="file" id="upload" /> <br>
+        
+        <div id="player"></div><br>        
+        
+        <audio id="audio" controls>
+            <source src="" id="src" />
+        </audio>
+        <br>
+        <!-- <input type="button" value="Play" onclick="playBoth()"> <input type="button" value="Pause" onclick="pauseBoth()">  -->
+        <input type="button" value="Sync Audio" onclick="sync()">
+    </div>
+
+    <script>
+        
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady(){
+            player = new YT.Player('player', {
+                height: '390',
+                width: '640',
+                playerVars: {
+                    'playsinline': 1
+                },
+                events: {
+                     'onStateChange': pauseOrPlay
+                }
+            });
+        }
+
+        function handleFiles(event) {
+            var files = event.target.files;
+            $("#src").attr("src", URL.createObjectURL(files[0]));
+            document.getElementById("audio").load();
+            document.getElementById("audio").onplay = function() {playBoth();};
+            document.getElementById("audio").onpause = function() {pauseBoth();};
+        }
+
+        document.getElementById("upload").addEventListener("change", handleFiles, false);
+
+        function playBoth()
+        {
+            document.getElementById("audio").play();
+            setTimeout(function(){player.playVideo();}, 100);
+            //player.playVideo();            
+        }
+
+        function pauseBoth()
+        {
+            player.pauseVideo();
+            document.getElementById("audio").pause();
+        }
+
+        function sync()
+        {
+            player.pauseVideo();
+            document.getElementById("audio").pause();
+
+            var vidTime = player.getCurrentTime();
+            var audTime = document.getElementById("audio").currentTime;
+
+            player.seekTo(vidTime - 1, true);
+            document.getElementById("audio").currentTime = vidTime -1;
+        }
+
+        function pullVideo()
+        {
+            var url = document.getElementById("urlInput").value;
+            var urlID = youtube_parser(url);
+
+            player.loadVideoById(urlID);
+            player.pauseVideo();
+            player.addEventListener("onStateChange", 'pauseOrPlay')
+        }
+
+        function pauseOrPlay(event)
+        {
+            if (event.data == 1)
+            {
+                playBoth();
+            }
+            else if (event.data == 2)
+            {
+                pauseBoth();
+            }
+        }
+
+        function youtube_parser(url){
+            var regExp = /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            return (match&&match[1].length==11)? match[1] : false;
+        }
+        
+    </script>
+
+</body>
+</html>
